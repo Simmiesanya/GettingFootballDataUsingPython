@@ -1,0 +1,67 @@
+import requests
+import pandas as pd
+
+#the url we wish to get our data from
+standings_url="https://fbref.com/en/comps/9/Premier-League-Stats"
+
+#the get function will make a request to the server and download 
+#the html of the page which was defined in the above line of code
+data = requests.get(standings_url)
+
+#check the page as text
+data.text
+
+#inspect the webpage to know what you actually want to parse
+#import beautiful soup
+from bs4 import BeautifulSoup
+
+#this is used to parse the html from the site
+soup = BeautifulSoup(data.text)
+
+#give the soup object something to select from the webpage
+#inspect the webpage again
+#beause what we want to get is inside the table, check the tag name for the table using the webpage inspect function
+#then we use the select function to select the table from the webpage using the table tag
+standings_table=soup.select('table.stats_table')[0] #where stats_table is the tag on the website and 0 is used to return the first resul
+standings_table
+
+#a-tags are anchor tags and they have hyperlinks to another webpage or document
+#since what we're interested in is the anchor tag,
+#find all the a-tags inside the table
+#find_all is only used to find tags
+#the code below will find all the a-tags in the standings_table
+links = standings_table.find_all('a')
+links
+
+#get the h-ref properties which is the hyperkink
+links = [l.get("href") for l in links]
+links
+
+#since the squad column is not the only a-tag in the table, the above code will return all a-tags in the table
+#we need to filter it out by finding what is only common to the squad column by carefully inspecting the href
+#we use the /squad filter because it is only common to the href in the squad column
+#the code below will only return href links that contain 'squad' in them
+links = [l for l in links if '/squads/' in l]
+links
+
+#turn the links to full url
+#this is done with the code below
+team_urls = [f"http://fbref.com{l}" for l in links]
+team_urls
+
+#pick thefirst team url which will lead you tothe team page
+#get the stat you want from the team url
+team_url = team_urls[0]
+team_url
+
+#get the html information from the selected team_url (team page)
+data = requests.get(team_url)
+data.text
+
+#visit the webpage to see what exactly you want to parse out of the page
+#the pandas function is used to read html links
+#it does this with the help of the 'match function'
+#The match function inspect all the tables on the page and looks for a specific string that was provided by the user
+#in order to successfully get a unique string identifyer for each table, look at the 'caption' tag in the webpage
+matches = pd.read_html(data.text, match = "Scores & Fixtures")
+matches[0]
